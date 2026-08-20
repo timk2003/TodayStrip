@@ -74,7 +74,8 @@ Turn the module off in Settings if you would rather not rely on it.
 
 ## Automation
 
-Two global shortcuts, registered through Carbon so they need no Accessibility permission:
+Two global shortcuts, registered through Carbon so they need neither Accessibility nor
+Input Monitoring permission:
 
 | Shortcut | Action |
 | --- | --- |
