@@ -1,6 +1,10 @@
 <div align="center">
 
+<img src="docs/icon.png" width="128" alt="TodayStrip app icon">
+
 # TodayStrip
+
+**One line in your menu bar, showing whatever matters most right now.**
 
 [![Latest release](https://img.shields.io/github/v/release/timk2003/TodayStrip?label=release&color=blue)](https://github.com/timk2003/TodayStrip/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/timk2003/TodayStrip/total?color=blue)](https://github.com/timk2003/TodayStrip/releases)
@@ -11,10 +15,9 @@
 
 </div>
 
-Everything that matters about today, in one line of your menu bar. TodayStrip shows a single item
-at a time and rotates between them by relevance — a meeting two minutes out takes the strip and
-holds it, a running timer does the same, the weather waits its turn. No account, no analytics, no
-background service.
+TodayStrip shows a single item at a time and rotates between them by relevance — a meeting two
+minutes out takes the strip and holds it, a running timer does the same, the weather waits its
+turn. No account, no analytics, no background service.
 
 ## Features
 
@@ -145,4 +148,12 @@ never transmitted.
 
 ## Licence
 
-MIT. Weather data by [Open-Meteo.com](https://open-meteo.com) (CC BY 4.0).
+MIT — see [LICENSE](LICENSE). Weather data by [Open-Meteo.com](https://open-meteo.com) (CC BY 4.0).
+
+---
+
+<div align="center">
+
+If TodayStrip made your day a little easier to read, consider giving it a ⭐.
+
+</div>
