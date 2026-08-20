@@ -6,8 +6,8 @@
 
 **One line in your menu bar, showing whatever matters most right now.**
 
-[![Latest release](https://img.shields.io/github/v/release/timk2003/TodayStrip?label=release&color=blue)](https://github.com/timk2003/TodayStrip/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/timk2003/TodayStrip/total?color=blue)](https://github.com/timk2003/TodayStrip/releases)
+[![Latest release](https://img.shields.io/github/v/release/timk2003/TodayStrip?label=release&color=blue&cacheSeconds=1800)](https://github.com/timk2003/TodayStrip/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/timk2003/TodayStrip/total?color=blue&cacheSeconds=1800)](https://github.com/timk2003/TodayStrip/releases)
 [![License](https://img.shields.io/github/license/timk2003/TodayStrip?color=blue)](LICENSE)
 ![Platform](https://img.shields.io/badge/macOS-14%2B-lightgrey)
 
