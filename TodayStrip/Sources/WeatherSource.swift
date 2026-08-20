@@ -1,7 +1,6 @@
 import Foundation
 import Observation
 import os
-import AppKit
 
 /// Current conditions for either the device's location or a place the user picked.
 ///
@@ -54,11 +53,7 @@ final class WeatherSource: StripSource {
     }
 
     func refresh() {
-        guard let target = resolveTarget() else {
-            NSLog("TS/wx: refresh aborted, no target (error=%@)", lastError ?? "none")
-            return
-        }
-        NSLog("TS/wx: fetching %.3f,%.3f", target.latitude, target.longitude)
+        guard let target = resolveTarget() else { return }
 
         fetch?.cancel()
         isLoading = true
@@ -70,8 +65,6 @@ final class WeatherSource: StripSource {
                     longitude: target.longitude,
                     unit: unit
                 )
-                guard !Task.isCancelled else { return }
-                NSLog("TS/wx: got %.1f code=%d", conditions.temperature, conditions.code)
                 self?.apply(conditions, placeName: target.name)
             } catch is CancellationError {
                 return
@@ -124,8 +117,48 @@ final class WeatherSource: StripSource {
     // MARK: - Publishing
 
     private func publish() {
-        let item = conditions.map { conditions in
-            let temperature = Self.formatted(conditions.temperature, unit: conditions.unitSymbol)
+        let item = conditions.map { Self.item(for: $0) }
+        guard item != currentItem else { return }
+        currentItem = item
+        onChange?()
+    }
+
+    /// Turns a reading into the one line the strip shows.
+    ///
+    /// Pure and static so the presentation rules can be exercised without a network round trip.
+    nonisolated static func item(for conditions: OpenMeteo.Conditions, now: Date = Date()) -> StripItem {
+        let temperature = formatted(conditions.temperature, unit: conditions.unitSymbol)
+
+        switch WeatherHeadline.of(conditions, now: now) {
+        case .rainStarting(let minutes):
+            return StripItem(
+                kind: .weather,
+                priority: .normal,
+                symbolName: "cloud.rain.fill",
+                text: "Rain in \(minutes)m",
+                compactText: "Rain \(minutes)m"
+            )
+
+        case .rainingNow:
+            return StripItem(
+                kind: .weather,
+                priority: .normal,
+                symbolName: "cloud.heavyrain.fill",
+                text: "Raining, \(temperature)",
+                compactText: temperature
+            )
+
+        case .frostTonight(let low):
+            let lowText = formatted(low, unit: conditions.unitSymbol)
+            return StripItem(
+                kind: .weather,
+                priority: .normal,
+                symbolName: "thermometer.snowflake",
+                text: "Frost tonight, \(lowText)",
+                compactText: "Frost \(lowText)"
+            )
+
+        case .conditions:
             return StripItem(
                 kind: .weather,
                 priority: .ambient,
@@ -134,9 +167,6 @@ final class WeatherSource: StripSource {
                 compactText: temperature
             )
         }
-        guard item != currentItem else { return }
-        currentItem = item
-        onChange?()
     }
 
     nonisolated static func formatted(_ value: Double, unit: String) -> String {

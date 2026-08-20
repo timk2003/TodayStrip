@@ -38,25 +38,26 @@ nonisolated struct MeetingLink: Equatable, Sendable {
     var title: String { service.title }
     var symbol: String { service.symbol }
 
-    /// Searches the fields in confidence order: a link in `url` or `location` is almost always
-    /// the meeting, whereas notes may also contain agendas, docs and signatures.
+    /// Finds the join link across an event's URL, location and notes.
+    ///
+    /// Two passes, because field confidence and service recognition pull in different directions.
+    /// A recognised service wins wherever it appears — a real Teams link in the notes beats an
+    /// unrelated URL that happens to sit in the location field. Only when nothing is recognised
+    /// does field confidence decide, and then notes are excluded: they carry agendas, documents
+    /// and signatures, so an unknown link there is not evidence of a meeting.
     static func detect(url: URL?, location: String?, notes: String?) -> MeetingLink? {
-        if let url, let link = classify(url), link.service != .generic {
-            return link
+        let fromURL = url.flatMap(classify)
+        let fromLocation = location.flatMap(firstLink(in:))
+        let fromNotes = notes.flatMap(firstLink(in:))
+
+        for candidate in [fromURL, fromLocation, fromNotes] {
+            if let candidate, candidate.service != .generic { return candidate }
         }
-        if let location, let link = firstLink(in: location, acceptGeneric: true) {
-            return link
-        }
-        if let url, let link = classify(url) {
-            return link
-        }
-        if let notes, let link = firstLink(in: notes, acceptGeneric: false) {
-            return link
-        }
-        return nil
+        return fromURL ?? fromLocation
     }
 
-    private static func firstLink(in text: String, acceptGeneric: Bool) -> MeetingLink? {
+    /// The first recognised service in `text`, or the first link of any kind if none is recognised.
+    private static func firstLink(in text: String) -> MeetingLink? {
         guard !text.isEmpty,
               let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
         else { return nil }
@@ -69,7 +70,7 @@ nonisolated struct MeetingLink: Equatable, Sendable {
             if link.service != .generic { return link }
             if fallback == nil { fallback = link }
         }
-        return acceptGeneric ? fallback : nil
+        return fallback
     }
 
     private static func classify(_ url: URL) -> MeetingLink? {

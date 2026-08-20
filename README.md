@@ -1,73 +1,106 @@
+<div align="center">
+
 # TodayStrip
 
-Everything that matters about today, in one line of your menu bar.
+[![Latest release](https://img.shields.io/github/v/release/timk2003/TodayStrip?label=release&color=blue)](https://github.com/timk2003/TodayStrip/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/timk2003/TodayStrip/total?color=blue)](https://github.com/timk2003/TodayStrip/releases)
+[![License](https://img.shields.io/github/license/timk2003/TodayStrip?color=blue)](LICENSE)
+![Platform](https://img.shields.io/badge/macOS-14%2B-lightgrey)
 
-TodayStrip shows a single item at a time — the next event, a running timer, your
-Focus, battery, weather, today's note — and rotates between them by relevance. A
-meeting two minutes out takes the strip and holds it. A running timer does the
-same. Weather waits its turn.
+[**Download**](https://github.com/timk2003/TodayStrip/releases/latest) · [Features](#features) · [Automation](#automation) · [Development](#development)
 
-Click it for the details panel: join the meeting, start a timer, jot the one line
-you want to remember about today.
+</div>
 
-## Requirements
+Everything that matters about today, in one line of your menu bar. TodayStrip shows a single item
+at a time and rotates between them by relevance — a meeting two minutes out takes the strip and
+holds it, a running timer does the same, the weather waits its turn. No account, no analytics, no
+background service.
 
-- macOS 14 (Sonoma) or later
-- Xcode 16 or later to build
+## Features
 
-## Building
+**The strip**
+- One item at a time, rotating by priority, with a cross-fade between them
+- A meeting about to start or a running timer pins the strip until it resolves
+- Something that becomes urgent cuts in instead of waiting its turn
+- Scroll over the strip to step through manually; rotation pauses while the panel is open
 
-```sh
-git clone https://github.com/<you>/TodayStrip.git
-cd TodayStrip
-open TodayStrip.xcodeproj
-```
+**Next event**
+- Leads with your free time when the next meeting is far off — "Free until 14:00" — and switches
+  to a countdown inside the last hour
+- Detects Zoom, Meet, Teams, Webex, Whereby, Jitsi, Slack and Discord links in the invitation
+- When the call is minutes away, clicking the strip joins it directly
+- All-day, cancelled and declined events are skipped; calendars are individually selectable
 
-No API keys, no accounts, no entitlements to provision — clone and run. Weather
-comes from [Open-Meteo](https://open-meteo.com), which needs neither.
+**Timer**
+- Countdown with presets, or a stopwatch, with a notification and sound when time is up
+- Owns the strip while it runs
 
-## The six modules
+**Weather**
+- Reports what changes: rain starting within the hour, frost tonight — and falls back to plain
+  conditions when nothing is happening
+- Current location (coarse) or a place you pick, in Celsius or Fahrenheit
 
-| Module | Source | Notes |
-| --- | --- | --- |
-| Next event | EventKit | Detects Zoom/Meet/Teams/Webex links and offers a join button. All-day, cancelled and declined events are skipped. |
-| Timer | — | Countdown and stopwatch. Owns the strip while running. |
-| Focus | `~/Library/DoNotDisturb/DB` | See the caveat below. |
-| Battery | IOKit | Hidden on machines without one. |
-| Weather | Open-Meteo | Current location (coarse) or a place you pick. |
-| Today's note | JSON in Application Support | One line per day, previous days kept. |
+**Focus, battery, today's note**
+- The active Focus, read from the files Control Center writes — see [the caveat](#the-focus-caveat)
+- Battery percentage and remaining time, loud only when it is actually low
+- One line per day, with the previous week a click away
 
-Every module can be switched off in Settings, and a module with nothing to
-report drops out of the rotation on its own.
+Every module can be switched off, and a module with nothing to report drops out of the rotation
+on its own.
+
+## Install
+
+Download the latest `TodayStrip.dmg` from [Releases](https://github.com/timk2003/TodayStrip/releases)
+and drag **TodayStrip** to your Applications folder.
+
+Releases are signed and notarized by Apple, so they open without Gatekeeper warnings.
+
+On first launch, TodayStrip asks for calendar access. Weather asks for location only if you leave
+it on "current location" — pick a city in Settings instead and it never asks.
 
 ### The Focus caveat
 
-macOS exposes no public API for the active Focus. TodayStrip reads the same JSON
-files Control Center writes, which means two things:
+macOS exposes no public API for the active Focus. TodayStrip reads the same JSON files Control
+Center writes under `~/Library/DoNotDisturb/`, which means two things:
 
-1. **The app cannot be sandboxed**, so it cannot ship on the Mac App Store.
-2. **It may break.** If Apple moves or reshapes those files, the module reports
-   nothing and disappears from the strip — nothing else is affected.
+1. **The app cannot be sandboxed**, so it will never ship on the Mac App Store.
+2. **It may break.** If Apple moves or reshapes those files, the module reports nothing and
+   disappears from the strip. Nothing else is affected.
 
 Turn the module off in Settings if you would rather not rely on it.
 
-## How the rotation works
+## Automation
 
-Each module publishes at most one `StripItem` carrying a priority:
+Two global shortcuts, registered through Carbon so they need no Accessibility permission:
 
-- `ambient` — weather, today's note
-- `normal` — an event later today, an active Focus
-- `elevated` — event within 15 minutes, battery under 20%
-- `urgent` — event within 5 minutes, battery under 10%
-- `pinned` — running timer, event within 2 minutes
+| Shortcut | Action |
+| --- | --- |
+| ⌥⌘T | Open the panel |
+| ⌥⌘R | Start or pause the timer |
 
-Items rotate in priority order and dwell longer the more urgent they are. Two
-rules break the round-robin: a `pinned` item stops rotation entirely, and an item
-that *becomes* `urgent` cuts in immediately instead of waiting its turn. Scroll
-over the strip to step through manually; the rotation also pauses while the panel
-is open.
+And a URL scheme, so Shortcuts, Raycast, Alfred or a shell script can drive it:
 
-## Architecture
+```sh
+open "todaystrip://timer/25"
+open "todaystrip://stopwatch"
+open "todaystrip://timer/stop"
+open "todaystrip://note?text=Ship%20the%20release"
+open "todaystrip://open"
+```
+
+## Development
+
+Open `TodayStrip.xcodeproj` in Xcode and run the `TodayStrip` scheme.
+
+```sh
+xcodebuild -project TodayStrip.xcodeproj -scheme TodayStrip -configuration Debug build
+xcodebuild -project TodayStrip.xcodeproj -scheme TodayStrip -destination 'platform=macOS' test
+```
+
+No API keys, no accounts, no entitlements to provision — clone and run. Weather comes from
+[Open-Meteo](https://open-meteo.com), which needs none.
+
+### Layout
 
 ```
 StatusItemController  ← the NSStatusItem, cross-fades between items
@@ -79,20 +112,36 @@ StatusItemController  ← the NSStatusItem, cross-fades between items
    StripSource × 6    ← Calendar, Timer, Focus, Battery, Weather, Note
 ```
 
-Sources know nothing about rotation, the menu bar, or each other. They observe
-one thing, and publish a `StripItem` when their answer changes. `StripRotator`
-takes all its time through `tick(_:)`, so its behaviour is testable without
-waiting on a clock.
+Sources know nothing about rotation, the menu bar, or each other. Each observes one thing and
+publishes a `StripItem` when its answer changes.
 
-AppKit rather than SwiftUI's `MenuBarExtra` for the status item itself: the
-rotation needs to cross-fade, which `MenuBarExtra`'s label does not expose. The
-popover and settings are SwiftUI.
+Two conventions make the interesting parts testable without a clock or a network:
+
+- Wording and priority live in pure static functions — `WeatherHeadline.of`, `CalendarHeadline.of`,
+  `CalendarSource.item(for:now:)`, `AppModel.clickAction` — that take `now` as a parameter.
+- `StripRotator` takes all its time through `tick(_:)`.
+
+AppKit rather than SwiftUI's `MenuBarExtra` for the status item: the rotation needs to cross-fade,
+which `MenuBarExtra`'s label does not expose. The panel and settings are SwiftUI.
+
+### Releasing
+
+```sh
+xcrun notarytool store-credentials todaystrip-notary \
+  --key AuthKey_XXXX.p8 --key-id <KEY_ID> --issuer <ISSUER_ID>
+
+./scripts/build_release.sh
+```
+
+Runs the tests, archives, signs with Developer ID, notarizes and staples both the app and the
+disk image, then verifies Gatekeeper acceptance. Credentials are checked before anything is built.
+The result lands in `build/TodayStrip-<version>.dmg`.
 
 ## Privacy
 
-Nothing leaves your Mac except a weather request to Open-Meteo, containing
-coordinates rounded to four decimal places and no identifier. Calendar data,
-notes and Focus state are read locally and never transmitted.
+Nothing leaves your Mac except a weather request to Open-Meteo, containing coordinates rounded to
+four decimal places and no identifier. Calendar data, notes and Focus state are read locally and
+never transmitted.
 
 ## Licence
 

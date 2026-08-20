@@ -72,6 +72,48 @@ private struct GeneralSettings: View {
             Section("Timer") {
                 Toggle("Play a sound when a timer ends", isOn: $preferences.playSoundOnTimerEnd)
             }
+
+            Section {
+                Toggle("Enable global shortcuts", isOn: $preferences.hotKeysEnabled)
+                    .onChange(of: preferences.hotKeysEnabled) {
+                        (NSApp.delegate as? AppDelegate)?.refreshHotKeys()
+                    }
+                Group {
+                    LabeledContent("Open the panel") {
+                        Text(HotKeyCenter.Combination.panel.displayName).monospaced()
+                    }
+                    LabeledContent("Start or pause the timer") {
+                        Text(HotKeyCenter.Combination.timer.displayName).monospaced()
+                    }
+                }
+                .foregroundStyle(preferences.hotKeysEnabled ? .primary : .tertiary)
+            } header: {
+                Text("Shortcuts")
+            } footer: {
+                Text("If another app already owns a combination, it silently stays with that app.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("TodayStrip answers `todaystrip://` URLs, so Shortcuts, Raycast or a shell script can drive it:")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(verbatim: """
+                    todaystrip://timer/25
+                    todaystrip://stopwatch
+                    todaystrip://timer/stop
+                    todaystrip://note?text=Ship%20the%20release
+                    todaystrip://open
+                    """)
+                    .font(.system(size: 10, design: .monospaced))
+                    .textSelection(.enabled)
+                }
+            } header: {
+                Text("Automation")
+            }
         }
         .formStyle(.grouped)
     }

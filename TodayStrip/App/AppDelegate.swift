@@ -1,9 +1,12 @@
 import AppKit
 import SwiftUI
 import UserNotifications
+import os
 
 /// Assembles the menu bar item, the popover and the model, and keeps them in step.
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private static let log = Logger(subsystem: Logger.subsystem, category: "AppDelegate")
+
     private let model = AppModel.shared
     private var statusItem: StatusItemController?
     private var popover: PopoverController?
@@ -20,8 +23,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         statusItem.onPrimaryClick = { [weak self] in
-            guard let button = self?.statusItem?.button else { return }
-            popover.toggle(relativeTo: button)
+            guard let self, let button = self.statusItem?.button else { return }
+            switch AppModel.clickAction(displayed: model.displayed, nextEvent: model.calendar.nextEvent) {
+            case .join(let url):
+                NSWorkspace.shared.open(url)
+            case .openPanel:
+                popover.toggle(relativeTo: button)
+            }
         }
         statusItem.onSecondaryClick = { [weak self] in
             self?.showContextMenu()
@@ -44,8 +52,62 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             statusItem.display(item)
         }
 
+        installHotKeysIfEnabled()
+
         model.start()
         statusItem.display(model.displayed)
+    }
+
+    // MARK: - Commands
+
+    /// Handles `todaystrip://` URLs. Same entry point as the global hotkeys.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls {
+            guard let command = URLCommand(url: url) else {
+                Self.log.notice("Ignoring unrecognised URL: \(url.absoluteString, privacy: .public)")
+                continue
+            }
+            perform(command)
+        }
+    }
+
+    private func perform(_ command: URLCommand) {
+        switch command {
+        case .startCountdown(let minutes):
+            model.timer.startCountdown(minutes: minutes)
+        case .startStopwatch:
+            model.timer.startStopwatch()
+        case .stopTimer:
+            model.timer.reset()
+        case .setNote(let text):
+            model.note.text = text
+        case .openPanel:
+            guard let button = statusItem?.button else { return }
+            popover?.toggle(relativeTo: button)
+        }
+    }
+
+    private func installHotKeysIfEnabled() {
+        guard model.preferences.hotKeysEnabled else { return }
+
+        HotKeyCenter.shared.register(.panel) { [weak self] in
+            self?.perform(.openPanel)
+        }
+        HotKeyCenter.shared.register(.timer) { [weak self] in
+            guard let self else { return }
+            // Idle means "start something"; anything else means "pause or resume what is running".
+            if model.timer.mode == .idle {
+                perform(.startCountdown(minutes: model.preferences.timerPresets.first ?? 25))
+            } else {
+                model.timer.toggle()
+            }
+        }
+    }
+
+    /// Re-reads the preference and rebinds. Called when the switch in Settings changes.
+    func refreshHotKeys() {
+        HotKeyCenter.shared.unregisterAll()
+        installHotKeysIfEnabled()
     }
 
     func applicationWillTerminate(_ notification: Notification) {

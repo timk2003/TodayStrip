@@ -93,6 +93,42 @@ final class AppModel {
         collect()
     }
 
+    // MARK: - Interaction
+
+    /// What a click on the strip should do.
+    nonisolated enum ClickAction: Equatable, Sendable {
+        case openPanel
+        case join(URL)
+    }
+
+    /// Decides between opening the panel and joining the call.
+    ///
+    /// Joining only takes the click when the strip is already showing the event and the call is
+    /// essentially now. Both conditions matter: hijacking the click while the strip shows the
+    /// battery, or for a meeting an hour out, would be a nasty surprise rather than a shortcut.
+    nonisolated static func clickAction(
+        displayed: StripItem?,
+        nextEvent: CalendarSource.Event?,
+        now: Date = Date()
+    ) -> ClickAction {
+        guard displayed?.kind == .event,
+              let event = nextEvent,
+              let link = event.link
+        else { return .openPanel }
+
+        switch CalendarHeadline.of(event, now: now) {
+        case .inProgress:
+            return .join(link.url)
+        case .startingSoon(let minutes) where minutes <= joinWindowMinutes:
+            return .join(link.url)
+        case .startingSoon, .freeUntil, .clear:
+            return .openPanel
+        }
+    }
+
+    /// How close the call has to be before the click becomes "join".
+    private nonisolated static let joinWindowMinutes = 5
+
     // MARK: - Rotation
 
     private func tick() {

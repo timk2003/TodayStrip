@@ -20,14 +20,24 @@ nonisolated enum OpenMeteo {
 
     // MARK: - Current conditions
 
+    /// Forecast precipitation in one 15-minute bucket.
+    nonisolated struct PrecipitationSample: Equatable, Sendable {
+        var time: Date
+        var millimetres: Double
+    }
+
     nonisolated struct Conditions: Equatable, Sendable {
         var temperature: Double
         var apparentTemperature: Double
+        /// Precipitation falling right now, in millimetres.
+        var precipitationNow: Double
         var high: Double?
         var low: Double?
         var code: Int
         var isDay: Bool
         var unitSymbol: String
+        /// The next couple of hours in 15-minute buckets, oldest first.
+        var precipitation: [PrecipitationSample]
         var fetched: Date
     }
 
@@ -41,10 +51,15 @@ nonisolated enum OpenMeteo {
         var query: [URLQueryItem] = [
             .init(name: "latitude", value: String(format: "%.4f", latitude)),
             .init(name: "longitude", value: String(format: "%.4f", longitude)),
-            .init(name: "current", value: "temperature_2m,apparent_temperature,weather_code,is_day"),
+            .init(name: "current", value: "temperature_2m,apparent_temperature,weather_code,is_day,precipitation"),
+            .init(name: "minutely_15", value: "precipitation"),
+            .init(name: "forecast_minutely_15", value: "12"),
             .init(name: "daily", value: "temperature_2m_max,temperature_2m_min"),
             .init(name: "forecast_days", value: "1"),
             .init(name: "timezone", value: "auto"),
+            // Epoch seconds instead of local ISO strings: the local form carries no offset, so
+            // turning it back into a `Date` would mean re-deriving the location's time zone.
+            .init(name: "timeformat", value: "unixtime"),
         ]
         if let apiUnit = unit.apiValue {
             query.append(.init(name: "temperature_unit", value: apiUnit))
@@ -52,14 +67,31 @@ nonisolated enum OpenMeteo {
         components.queryItems = query
 
         let payload: ForecastPayload = try await get(components.url!, session: session)
+        return conditions(from: payload, unit: unit)
+    }
+
+    /// Split out from the request so the wire format can be exercised without the network.
+    static func conditions(from payload: ForecastPayload, unit: TemperatureUnit) -> Conditions {
+        let samples = zip(
+            payload.minutely15?.time ?? [],
+            payload.minutely15?.precipitation ?? []
+        ).map { time, millimetres in
+            PrecipitationSample(
+                time: Date(timeIntervalSince1970: TimeInterval(time)),
+                millimetres: millimetres ?? 0
+            )
+        }
+
         return Conditions(
             temperature: payload.current.temperature2m,
             apparentTemperature: payload.current.apparentTemperature ?? payload.current.temperature2m,
+            precipitationNow: payload.current.precipitation ?? 0,
             high: payload.daily?.temperature2mMax.first,
             low: payload.daily?.temperature2mMin.first,
             code: payload.current.weatherCode,
             isDay: payload.current.isDay == 1,
             unitSymbol: unit.symbol,
+            precipitation: samples,
             fetched: Date()
         )
     }
@@ -104,28 +136,54 @@ nonisolated enum OpenMeteo {
         if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
             throw Failure.badResponse(http.statusCode)
         }
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        return try decoder.decode(T.self, from: data)
+        // No `.convertFromSnakeCase` here: it maps `temperature_2m` to `temperature2M`, because
+        // `"2m".capitalized` treats the digit as a word boundary. Explicit keys below instead.
+        return try JSONDecoder().decode(T.self, from: data)
     }
 
     // MARK: - Wire format
 
-    private nonisolated struct ForecastPayload: Decodable {
+    nonisolated struct ForecastPayload: Decodable {
         struct Current: Decodable {
             let temperature2m: Double
             let apparentTemperature: Double?
             let weatherCode: Int
             let isDay: Int
+            let precipitation: Double?
+
+            enum CodingKeys: String, CodingKey {
+                case temperature2m = "temperature_2m"
+                case apparentTemperature = "apparent_temperature"
+                case weatherCode = "weather_code"
+                case isDay = "is_day"
+                case precipitation
+            }
         }
 
         struct Daily: Decodable {
             let temperature2mMax: [Double]
             let temperature2mMin: [Double]
+
+            enum CodingKeys: String, CodingKey {
+                case temperature2mMax = "temperature_2m_max"
+                case temperature2mMin = "temperature_2m_min"
+            }
+        }
+
+        /// 15-minute buckets. Open-Meteo sends `null` for buckets it has no value for.
+        struct Minutely15: Decodable {
+            let time: [Int]
+            let precipitation: [Double?]
         }
 
         let current: Current
         let daily: Daily?
+        let minutely15: Minutely15?
+
+        enum CodingKeys: String, CodingKey {
+            case current, daily
+            case minutely15 = "minutely_15"
+        }
     }
 
     private nonisolated struct GeocodingPayload: Decodable {
@@ -136,6 +194,7 @@ nonisolated enum OpenMeteo {
             let country: String?
             let admin1: String?
         }
+
 
         let results: [Result]?
     }

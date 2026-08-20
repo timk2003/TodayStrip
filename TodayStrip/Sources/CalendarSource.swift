@@ -2,7 +2,6 @@ import Foundation
 import EventKit
 import Observation
 import os
-import AppKit
 
 /// The next event worth walking into a room for.
 ///
@@ -95,20 +94,16 @@ final class CalendarSource: StripSource {
 
     func requestAccessIfNeeded() async {
         authorization = EKEventStore.authorizationStatus(for: .event)
-        NSLog("TS/cal: entry status=%d", authorization.rawValue)
         guard authorization == .notDetermined else {
             if hasAccess { query() }
             return
         }
         do {
-            let granted = try await store.requestFullAccessToEvents()
-            NSLog("TS/cal: requestFullAccess granted=%@", String(describing: granted))
+            _ = try await store.requestFullAccessToEvents()
         } catch {
-            NSLog("TS/cal: requestFullAccess threw %@", error.localizedDescription)
             Self.log.error("Calendar access request failed: \(error.localizedDescription)")
         }
         authorization = EKEventStore.authorizationStatus(for: .event)
-        NSLog("TS/cal: after status=%d hasAccess=%@", authorization.rawValue, String(describing: hasAccess))
         if hasAccess { query() }
     }
 
@@ -119,6 +114,13 @@ final class CalendarSource: StripSource {
     // MARK: - Querying
 
     private func query() {
+        // Re-read the grant every time. Without this, permission granted while the app is running
+        // never registers: `authorization` would keep its startup value, `query()` would keep
+        // clearing the event list, and the user would be stuck looking at the permission prompt
+        // with no way out short of relaunching.
+        let status = EKEventStore.authorizationStatus(for: .event)
+        if status != authorization { authorization = status }
+
         guard hasAccess else {
             availableCalendars = []
             apply(events: [])
@@ -137,7 +139,6 @@ final class CalendarSource: StripSource {
             return
         }
 
-        NSLog("TS/cal: query cals=%d included=%d", calendars.count, included.count)
         let now = Date()
         let end = now.addingTimeInterval(TimeInterval(preferences.eventLookAheadMinutes) * 60)
         let predicate = store.predicateForEvents(withStart: now, end: end, calendars: included)
@@ -149,7 +150,6 @@ final class CalendarSource: StripSource {
             .prefix(10)
             .map(Self.value(from:))
 
-        NSLog("TS/cal: matched %d events", events.count)
         lastQuery = now
         apply(events: Array(events))
     }
@@ -194,52 +194,76 @@ final class CalendarSource: StripSource {
             return
         }
 
-        let item = nextEvent.map { event -> StripItem in
-            let minutes = event.minutesUntilStart
-            let priority: StripPriority
-            if event.isInProgress {
-                priority = .elevated
-            } else if minutes <= 2 {
-                priority = .pinned
-            } else if minutes <= 5 {
-                priority = .urgent
-            } else if minutes <= 15 {
-                priority = .elevated
-            } else {
-                priority = .normal
-            }
-
-            return StripItem(
-                kind: .event,
-                priority: priority,
-                symbolName: event.link != nil ? "video.fill" : "calendar",
-                text: "\(event.title) \(Self.relativeText(for: event))",
-                compactText: Self.relativeText(for: event),
-                tint: priority >= .urgent ? .warning : .normal
-            )
-        }
-
+        let item = Self.item(for: nextEvent)
         guard item != currentItem else { return }
         currentItem = item
         onChange?()
     }
 
-    /// "now", "in 12m", "ends in 8m" or a wall-clock time, whichever is most useful at that range.
-    nonisolated static func relativeText(for event: Event) -> String {
-        if event.isInProgress {
-            let left = Int((event.end.timeIntervalSinceNow / 60).rounded(.up))
-            return left <= 1 ? "ending" : "ends in \(left)m"
+    /// Turns the next event into the one line the strip shows.
+    ///
+    /// Pure and static so the wording and the priority thresholds can be exercised directly.
+    nonisolated static func item(for event: Event?, now: Date = Date()) -> StripItem? {
+        guard let event else { return nil }
+
+        switch CalendarHeadline.of(event, now: now) {
+        case .clear:
+            return nil
+
+        case .freeUntil(let start):
+            let time = clockTime(start)
+            return StripItem(
+                kind: .event,
+                priority: .normal,
+                symbolName: "checkmark.circle",
+                text: "Free until \(time)",
+                compactText: "Free \u{2192} \(time)"
+            )
+
+        case .inProgress(let minutesLeft):
+            return StripItem(
+                kind: .event,
+                priority: .elevated,
+                symbolName: event.link != nil ? "video.fill" : "calendar",
+                text: "\(event.title), \(minutesLeft <= 1 ? "ending" : "ends in \(minutesLeft)m")",
+                compactText: "\(minutesLeft)m left"
+            )
+
+        case .startingSoon(let minutes):
+            let priority: StripPriority
+            switch minutes {
+            case ..<3: priority = .pinned
+            case ..<6: priority = .urgent
+            case ..<16: priority = .elevated
+            default: priority = .normal
+            }
+            let relative = minutes < 1 ? "now" : "in \(minutes)m"
+            return StripItem(
+                kind: .event,
+                priority: priority,
+                symbolName: event.link != nil ? "video.fill" : "calendar",
+                text: "\(event.title) \(relative)",
+                compactText: relative,
+                tint: priority >= .urgent ? .warning : .normal
+            )
         }
-        let minutes = event.minutesUntilStart
-        switch minutes {
-        case ..<1: return "now"
-        case ..<60: return "in \(minutes)m"
-        default:
-            let formatter = DateFormatter()
-            formatter.timeStyle = .short
-            formatter.dateStyle = .none
-            return formatter.string(from: event.start)
+    }
+
+    /// "in 12m", "ends in 8m" or a wall-clock time, whichever is most useful at that range.
+    nonisolated static func relativeText(for event: Event, now: Date = Date()) -> String {
+        switch CalendarHeadline.of(event, now: now) {
+        case .inProgress(let left): left <= 1 ? "ending" : "ends in \(left)m"
+        case .startingSoon(let minutes): minutes < 1 ? "now" : "in \(minutes)m"
+        case .freeUntil(let start): clockTime(start)
+        case .clear: ""
         }
+    }
+
+    nonisolated static func clockTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        formatter.dateStyle = .none
+        return formatter.string(from: date)
     }
 
     // MARK: - Helpers

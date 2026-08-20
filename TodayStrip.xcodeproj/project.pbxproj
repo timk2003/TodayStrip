@@ -8,6 +8,7 @@
 
 /* Begin PBXFileReference section */
 		22A09C7630379AFB00A0F62C /* TodayStrip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TodayStrip.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		22A09D0330379AFB00A0F003 /* TodayStripTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TodayStripTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +17,22 @@
 			path = TodayStrip;
 			sourceTree = "<group>";
 		};
+		22A09D0230379AFB00A0F002 /* TodayStripTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = TodayStripTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		22A09C7330379AFB00A0F62C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		22A09D0530379AFB00A0F005 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +46,7 @@
 			isa = PBXGroup;
 			children = (
 				22A09C7830379AFB00A0F62C /* TodayStrip */,
+				22A09D0230379AFB00A0F002 /* TodayStripTests */,
 				22A09C7730379AFB00A0F62C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +55,7 @@
 			isa = PBXGroup;
 			children = (
 				22A09C7630379AFB00A0F62C /* TodayStrip.app */,
+				22A09D0330379AFB00A0F003 /* TodayStripTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,7 +85,48 @@
 			productReference = 22A09C7630379AFB00A0F62C /* TodayStrip.app */;
 			productType = "com.apple.product-type.application";
 		};
+		22A09D0130379AFB00A0F001 /* TodayStripTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 22A09D0930379AFB00A0F009 /* Build configuration list for PBXNativeTarget "TodayStripTests" */;
+			buildPhases = (
+				22A09D0430379AFB00A0F004 /* Sources */,
+				22A09D0530379AFB00A0F005 /* Frameworks */,
+				22A09D0630379AFB00A0F006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				22A09D0730379AFB00A0F007 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				22A09D0230379AFB00A0F002 /* TodayStripTests */,
+			);
+			name = TodayStripTests;
+			packageProductDependencies = (
+			);
+			productName = TodayStripTests;
+			productReference = 22A09D0330379AFB00A0F003 /* TodayStripTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		22A09D0830379AFB00A0F008 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 22A09C6E30379AFB00A0F62C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 22A09C7530379AFB00A0F62C;
+			remoteInfo = TodayStrip;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		22A09D0730379AFB00A0F007 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 22A09C7530379AFB00A0F62C /* TodayStrip */;
+			targetProxy = 22A09D0830379AFB00A0F008 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		22A09C6E30379AFB00A0F62C /* Project object */ = {
@@ -100,6 +156,7 @@
 			projectRoot = "";
 			targets = (
 				22A09C7530379AFB00A0F62C /* TodayStrip */,
+				22A09D0130379AFB00A0F001 /* TodayStripTests */,
 			);
 		};
 /* End PBXProject section */
@@ -112,10 +169,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		22A09D0630379AFB00A0F006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		22A09C7230379AFB00A0F62C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		22A09D0430379AFB00A0F004 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -258,6 +329,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Configuration/Info.plist;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "TodayStrip shows your next event in the menu bar.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "TodayStrip shows your next event in the menu bar.";
@@ -293,6 +365,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Configuration/Info.plist;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "TodayStrip shows your next event in the menu bar.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "TodayStrip shows your next event in the menu bar.";
@@ -315,6 +388,46 @@
 			};
 			name = Release;
 		};
+		22A09D0A30379AFB00A0F00A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WZ5SB4MMHN;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.timkrisch.TodayStripTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TodayStrip.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TodayStrip";
+			};
+			name = Debug;
+		};
+		22A09D0B30379AFB00A0F00B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WZ5SB4MMHN;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.timkrisch.TodayStripTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TodayStrip.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TodayStrip";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -332,6 +445,15 @@
 			buildConfigurations = (
 				22A09C8230379AFD00A0F62C /* Debug */,
 				22A09C8330379AFD00A0F62C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		22A09D0930379AFB00A0F009 /* Build configuration list for PBXNativeTarget "TodayStripTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				22A09D0A30379AFB00A0F00A /* Debug */,
+				22A09D0B30379AFB00A0F00B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

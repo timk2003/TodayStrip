@@ -163,6 +163,16 @@ final class Preferences {
 
     // MARK: - General
 
+    /// Whether the global shortcuts are bound. Fixed combinations for now; the switch exists
+    /// because another app may already own them.
+    var hotKeysEnabled: Bool {
+        get {
+            access(keyPath: \.hotKeysEnabled)
+            return flag(Key.hotKeys, true)
+        }
+        set { withMutation(keyPath: \.hotKeysEnabled) { defaults.set(newValue, forKey: Key.hotKeys) } }
+    }
+
     var launchAtLogin: Bool {
         get {
             access(keyPath: \.launchAtLogin)
@@ -200,6 +210,7 @@ final class Preferences {
         static let temperatureUnit = "temperatureUnit"
         static let timerPresets = "timerPresets"
         static let timerSound = "playSoundOnTimerEnd"
+        static let hotKeys = "hotKeysEnabled"
     }
 }
 
