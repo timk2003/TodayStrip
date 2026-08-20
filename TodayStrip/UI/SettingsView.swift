@@ -168,9 +168,11 @@ private struct AboutSettings: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Image(systemName: "calendar.day.timeline.left")
-                .font(.system(size: 40, weight: .light))
-                .foregroundStyle(.tint)
+            // The real bundle icon rather than a stand-in symbol. `NSImage.applicationIconName`
+            // resolves through the asset catalog, so it picks the sharpest representation.
+            Image(nsImage: NSImage(named: NSImage.applicationIconName) ?? NSImage())
+                .resizable()
+                .frame(width: 72, height: 72)
 
             Text("TodayStrip")
                 .font(.title2.weight(.semibold))
